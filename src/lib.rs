@@ -1,6 +1,10 @@
+mod version;
+
 use std::{error::Error, fmt::Display, path::Path};
 
 use clap::{App, Arg};
+
+use version::Version;
 
 pub struct Config {
     dir: String,
@@ -39,13 +43,13 @@ impl Config {
         let verbose = matches.is_present("verbose");
 
         let root_path = Path::new(&dir);
-        if !root_path.exists() {
+        if !root_path.is_dir() {
             let msg = format!("DIR '{}' does not exist", dir);
             return Err(msg);
         }
 
         let backup_path = Path::new(&backup);
-        if !backup_path.exists() {
+        if !backup_path.is_dir() {
             let msg = format!("BACKUP dir '{}' does not exist", backup);
             return Err(msg);
         }
