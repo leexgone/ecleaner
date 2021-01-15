@@ -1,2 +1,3 @@
 # ecleaner
-cleanup the duplicated plugins in eclipse
+
+cleanup the duplicated plugins in eclipse plugins directory.
