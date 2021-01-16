@@ -1,4 +1,5 @@
 mod version;
+mod plugin;
 
 use std::{error::Error, io::ErrorKind, path::{Path, PathBuf}};
 use std::fmt::Display;
@@ -6,6 +7,7 @@ use std::fmt::Display;
 use clap::{App, Arg};
 
 use version::Version;
+use plugin::Plugin;
 
 pub struct Config {
     dir: String,
@@ -102,16 +104,4 @@ fn scan_plugins(dir: &str, verbose: bool) -> Result<(), Box<dyn Error>> {
     }
     
     Ok(())
-}
-
-struct Plugin {
-    path: PathBuf,
-    name: String,
-    version: Version,
-}
-
-impl Plugin {
-    // fn new(path: PathBuf) -> Result<Plugin, Box<dyn Error>> {
-
-    // }
 }
