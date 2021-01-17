@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::Display, io::ErrorKind, path::PathBuf};
 
+use regex::Regex;
+
 use super::version::Version;
 
 #[derive(Debug)]
@@ -42,10 +44,10 @@ impl Plugin {
             }
         }
 
-        let (name, version) = if let Some(p) = filename.find('_') {
-            // let (plugin_name, version_expr) = filename.split_at(p);
-            let plugin_name = &filename[0..p];
-            let version_expr = &filename[p + 1..];
+        let regex = Regex::new("_\\d+[.]\\d+[.]\\d+")?;
+        let (name, version) = if let Some(m) = regex.find(&filename) { 
+            let plugin_name = &filename[0..m.start()];
+            let version_expr = &filename[m.start() + 1..];
             match Version::parse(version_expr) {
                 Ok(version) => {
                     (
@@ -97,10 +99,18 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_error() {
+    fn test_parse_plugin_dual() {
         let path = PathBuf::from("d:/eclipse\\plugins\\org.w3c.dom.events_3.0.0.draft20060413_v201105210656.jar");
         let plugin = Plugin::new(path).unwrap();
         assert_eq!("org.w3c.dom.events", &plugin.name);
         assert_eq!(Version::parse("3.0.0.draft20060413_v201105210656").unwrap(), plugin.version);
+    }
+
+    #[test]
+    fn test_parse_plugin_err01() {
+        let path = PathBuf::from("d:/eclipse/plugins/org.eclipse.cdt.core.win32.x86_64_6.0.0.202008310002");
+        let plugin = Plugin::new(path).unwrap();
+        assert_eq!("org.eclipse.cdt.core.win32.x86_64", &plugin.name);
+        assert_eq!(Version::parse("6.0.0.202008310002").unwrap(), plugin.version);
     }
 }

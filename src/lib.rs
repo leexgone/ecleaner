@@ -87,7 +87,7 @@ macro_rules! log {
 }
 
 fn scan_plugins(dir: &str, verbose: bool) -> Result<(), Box<dyn Error>> {
-    let plugin_path: PathBuf = [dir, "plugins"].iter().collect();
+    let plugin_path = PathBuf::from(format!("{}/plugins", dir));
     if !plugin_path.is_dir() { 
         let e = std::io::Error::new(ErrorKind::NotFound, format!("Can not find `plugins` dir under `{}` dir", dir));
         return Err(Box::new(e));
