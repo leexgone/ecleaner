@@ -6,7 +6,6 @@ use std::fmt::Display;
 
 use clap::{App, Arg};
 
-use version::Version;
 use plugin::Plugin;
 
 pub struct Config {
@@ -98,9 +97,9 @@ fn scan_plugins(dir: &str, verbose: bool) -> Result<(), Box<dyn Error>> {
     for entry in plugin_path.read_dir()? {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() {
-            log!(verbose, ">> {:?}", path);
-        }
+        let plugin = Plugin::new(path)?;
+
+        log!(verbose, ">> {}", plugin);
     }
     
     Ok(())
