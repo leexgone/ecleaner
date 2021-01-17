@@ -6,9 +6,9 @@ use super::version::Version;
 
 #[derive(Debug)]
 pub struct Plugin {
-    path: PathBuf,
-    name: String,
-    version: Version,
+    pub path: PathBuf,
+    pub name: String,
+    pub version: Version,
 }
 
 impl Display for Plugin {
