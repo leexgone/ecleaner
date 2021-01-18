@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display, io::ErrorKind, path::PathBuf};
+use std::{error::Error, fmt::Display, fs, io::ErrorKind, path::PathBuf, usize};
 
 use regex::Regex;
 
@@ -71,6 +71,49 @@ impl Plugin {
             name,
             version
         })
+    }
+
+    pub fn move_to(&self, target: &PathBuf) -> Result<usize, Box<dyn Error>> {
+        let count = Plugin::copy_all(&self.path, target)?;
+
+        self.remove()?;
+        
+        Ok(count)
+    }
+
+    fn copy_all(root: &PathBuf, target: &PathBuf) -> Result<usize, Box<dyn Error>> {
+        let mut count: usize = 0;
+        let mut dest_path = target.clone();
+        dest_path.push(root.file_name().unwrap());
+
+        if root.is_file() {
+            fs::copy(&root, &dest_path)?;
+
+            count += 1;
+        } else if root.is_dir() {
+            if !dest_path.exists() {
+                fs::create_dir(&dest_path)?;
+            }
+
+            for entry in root.read_dir()? {
+                let entry = entry?;
+                let sub_path = entry.path();
+
+                count += Plugin::copy_all(&sub_path, &dest_path)?;
+            }
+        }
+
+        Ok(count)
+    }
+
+    fn remove(&self) -> Result<(), Box<dyn Error>> {
+        if self.path.is_file() {
+            fs::remove_file(&self.path)?;
+        } else if self.path.is_dir() {
+            fs::remove_dir_all(&self.path)?;
+        }
+
+        Ok(())
     }
 }
 

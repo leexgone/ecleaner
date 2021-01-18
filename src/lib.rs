@@ -1,7 +1,7 @@
 mod version;
 mod plugin;
 
-use std::{collections::HashMap, error::Error, io::ErrorKind, path::{Path, PathBuf}};
+use std::{collections::HashMap, error::Error, fs, io::{self, ErrorKind}, path::{Path, PathBuf}, usize};
 use std::fmt::Display;
 
 use clap::{App, Arg};
@@ -13,18 +13,19 @@ pub struct Config {
     backup: String,
     verbose: bool,
     test: bool,
+    force: bool,
 }
 
 impl Display for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[dir = {}, backup = {}, verbose = {}, test = {}]", self.dir, self.backup, self.verbose, self.test)
+        write!(f, "[dir = {}, backup = {}, verbose = {}, test = {}, force = {}]", self.dir, self.backup, self.verbose, self.test, self.force)
     }
 }
 
 impl Config {
     pub fn new() -> Result<Config, String> {
         let matches = App::new("eclean")
-                        .version("0.1.0")
+                        .version("1.0.0")
                         .author("Steven Lee <leexgone@163.com>")
                         .about("Clean up the duplicated plugins in eclipse plugins directory.")
                         .arg(Arg::with_name("DIR")
@@ -42,13 +43,19 @@ impl Config {
                         .arg(Arg::with_name("test")
                             .short("t")
                             .long("test")
-                            .help("Scan and find the duplicated plugins, but do nothing"))   
+                            .help("Scan and find the duplicated plugins, but do nothing"))
+                        .arg(Arg::with_name("force")
+                            .short("f")
+                            .long("force")
+                            .help("Clean up the duplicated plugins automatically. Never prompt."))   
                         .get_matches();
 
         let dir = matches.value_of("DIR").unwrap();
         let backup = matches.value_of("BACKUP").unwrap();
         let verbose = matches.is_present("verbose");
         let test = matches.is_present("test");
+        let force = matches.is_present("force");
+
 
         let root_path = Path::new(&dir);
         if !root_path.is_dir() {
@@ -66,7 +73,8 @@ impl Config {
             dir: String::from(dir),
             backup: String::from(backup),
             verbose,
-            test
+            test,
+            force,
         })
     }
 }
@@ -80,11 +88,23 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     } else {
         PluginSet::print_dupicates(&duplicates);
         if !config.test {
-            PluginSet::remove_duplicates(&duplicates, &config.backup)?;
+            if config.force || prompt(duplicates.len()) {
+                PluginSet::remove_duplicates(&duplicates, &config.backup, config.verbose)?;
+            }
         }
     }
 
     Ok(())
+}
+
+fn prompt(size: usize) -> bool {
+    println!("{} plugins will be removed to the backup dir. Continue to remove these plugins? [Y/n] ", size);
+    
+    let mut answer = String::new();
+    io::stdin().read_line(&mut answer).expect("Invalidate input");
+    let answer = answer.trim();
+
+    "Y".eq_ignore_ascii_case(answer) || "YES".eq_ignore_ascii_case(answer)
 }
 
 macro_rules! log {
@@ -160,7 +180,35 @@ impl PluginSet {
         }
     }
 
-    fn remove_duplicates(duplicates: &Vec<&Vec<Plugin>>, backup: &str) -> Result<(), Box<dyn Error>> {
+    fn remove_duplicates(duplicates: &Vec<&Vec<Plugin>>, backup: &str, verbose: bool) -> Result<(), Box<dyn Error>> {
+        let backup_path: PathBuf = [backup, "plugins"].iter().collect();
+
+        if !backup_path.exists() {
+            fs::create_dir(&backup_path)?;
+            log!(verbose, "Create backup dir: {}", backup_path.display());
+        }
+
+        let mut count = 0;
+        for list in duplicates {
+            let plugins = *list;
+
+            let keep = plugins.last().unwrap();
+            log!(verbose, "Cleaning up `{}`, lastest: v{}...", keep.name, keep.version);
+
+            for (i, plugin) in plugins.iter().enumerate() {
+                if i == plugins.len() - 1 {
+                    break;
+                }
+
+                let file_count = plugin.move_to(&backup_path)?;
+                log!(verbose, "  remove version v{}, {} files deleted.", plugin.version, file_count);
+
+                count += 1;
+            }
+        }
+
+        println!("{} plugins have been cleaned up successfully!", count);
+
         Ok(())
     }
 }
