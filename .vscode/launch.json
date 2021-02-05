@@ -11,13 +11,14 @@
             "program": "${workspaceFolder}/target/debug/eclean.exe",
             "args": [
                 "-v",
+                "-t",
                 "d:/eclipse",
                 "e:/temp"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true,
+            "externalConsole": false,
         }
     ]
 }
