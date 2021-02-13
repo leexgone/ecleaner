@@ -34,7 +34,7 @@ impl Config {
                             .index(1))
                         .arg(Arg::with_name("BACKUP")
                             .help("Specify a backup directory to store the removed plugins.")
-                            .required(true)
+                            .required_unless("test")
                             .index(2))
                         .arg(Arg::with_name("verbose")
                             .short("v")
@@ -47,26 +47,27 @@ impl Config {
                         .arg(Arg::with_name("force")
                             .short("f")
                             .long("force")
-                            .help("Clean up the duplicated plugins automatically. Never prompt."))   
+                            .help("Clean up the duplicated plugins automatically. Never prompt."))
                         .get_matches();
 
         let dir = matches.value_of("DIR").unwrap();
-        let backup = matches.value_of("BACKUP").unwrap();
+        let backup = matches.value_of("BACKUP").unwrap_or("");
         let verbose = matches.is_present("verbose");
         let test = matches.is_present("test");
         let force = matches.is_present("force");
 
-
-        let root_path = Path::new(&dir);
+        let root_path = Path::new(dir);
         if !root_path.is_dir() {
             let msg = format!("DIR '{}' does not exist", dir);
             return Err(msg);
         }
 
-        let backup_path = Path::new(&backup);
-        if !backup_path.is_dir() {
-            let msg = format!("BACKUP dir '{}' does not exist", backup);
-            return Err(msg);
+        if !test {
+            let backup_path = Path::new(backup);
+            if !backup_path.is_dir() {
+                let msg = format!("BACKUP dir '{}' does not exist", backup);
+                return Err(msg);
+            }
         }
 
         Ok(Config {
