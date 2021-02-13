@@ -25,7 +25,7 @@ impl Display for Config {
 impl Config {
     pub fn new() -> Result<Config, String> {
         let matches = App::new("eclean")
-                        .version("1.0.0")
+                        .version("1.1.0")
                         .author("Steven Lee <leexgone@163.com>")
                         .about("Clean up the duplicated plugins in eclipse plugins directory.")
                         .arg(Arg::with_name("DIR")
