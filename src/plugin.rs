@@ -119,7 +119,9 @@ impl Plugin {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{fs, path::PathBuf};
+
+    use fs::File;
 
     use crate::version::Version;
 
@@ -127,33 +129,57 @@ mod tests {
 
     #[test]
     fn test_parse_plugin_dir() {
-        let path: PathBuf = PathBuf::from("D:\\eclipse\\plugins\\javax.xml.rpc_1.1.0.v201209140446");
+        let filename = "javax.xml.rpc_1.1.0.v201209140446";
+
+        fs::create_dir(filename).unwrap();
+
+        let path: PathBuf = PathBuf::from(filename);
         let plugin = Plugin::new(path).unwrap();
         assert_eq!("javax.xml.rpc", &plugin.name);
         assert_eq!(Version::parse("1.1.0.v201209140446").unwrap(), plugin.version);
+
+        fs::remove_dir(filename).unwrap();
     }
 
     #[test]
     fn test_parse_plugin_file() {
-        let path: PathBuf = PathBuf::from("D:\\eclipse\\plugins\\org.apache.commons.codec_1.13.0.v20200108-0001.jar");
+        let filename = "org.apache.commons.codec_1.13.0.v20200108-0001.jar";
+
+        File::create(filename).unwrap();
+
+        let path: PathBuf = PathBuf::from(filename);
         let plugin = Plugin::new(path).unwrap();
         assert_eq!("org.apache.commons.codec", &plugin.name);
         assert_eq!(Version::parse("1.13.0.v20200108-0001").unwrap(), plugin.version);
+
+        fs::remove_file(filename).unwrap();
     }
 
     #[test]
     fn test_parse_plugin_dual() {
-        let path = PathBuf::from("d:/eclipse\\plugins\\org.w3c.dom.events_3.0.0.draft20060413_v201105210656.jar");
+        let filename = "org.w3c.dom.events_3.0.0.draft20060413_v201105210656.jar";
+
+        File::create(filename).unwrap();
+
+        let path = PathBuf::from(filename);
         let plugin = Plugin::new(path).unwrap();
         assert_eq!("org.w3c.dom.events", &plugin.name);
         assert_eq!(Version::parse("3.0.0.draft20060413_v201105210656").unwrap(), plugin.version);
+
+        fs::remove_file(filename).unwrap();
     }
 
     #[test]
     fn test_parse_plugin_err01() {
-        let path = PathBuf::from("d:/eclipse/plugins/org.eclipse.cdt.core.win32.x86_64_6.0.0.202008310002");
+        let filename = "org.eclipse.cdt.core.win32.x86_64_6.0.0.202008310002";
+
+        fs::create_dir(filename).unwrap();
+
+        let path = PathBuf::from(filename);
         let plugin = Plugin::new(path).unwrap();
         assert_eq!("org.eclipse.cdt.core.win32.x86_64", &plugin.name);
         assert_eq!(Version::parse("6.0.0.202008310002").unwrap(), plugin.version);
+
+        fs::remove_dir(filename).unwrap();
     }
 }
